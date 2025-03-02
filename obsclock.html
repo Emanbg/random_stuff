@@ -33,20 +33,20 @@
 
             #clock .time {
                 letter-spacing: 0.05em;
-                font-size: clamp(80px, 16vw, 200px);
-                padding: 5px 0;
+                font-size: 160px; /* Fixed font size */
+                padding: 10px 0;
                 margin: 0;
             }
 
             #clock .date {
                 letter-spacing: 0.1em;
-                font-size: clamp(30px, 5vw, 60px);
-                margin: 0 0 10px 0;
+                font-size: 60px; /* Fixed font size */
+                margin: 0 0 20px 0;
             }
 
             #clock .cycling-text {
-                font-size: clamp(150px, 8vw, 100px);
-                margin-top: 10px;
+                font-size: 260px; /* Fixed font size (larger than time) */
+                margin-top: 20px;
             }
     </style>
 </head>
@@ -64,7 +64,8 @@
             data: {
                 time: '',
                 date: '',
-                cyclingText: ''
+                cyclingText: '',
+                lastEvenSecond: null
             }
         });
 
@@ -76,6 +77,15 @@
             var cd = new Date();
             clock.time = zeroPadding(cd.getHours(), 2) + ':' + zeroPadding(cd.getMinutes(), 2) + ':' + zeroPadding(cd.getSeconds(), 2);
             clock.date = zeroPadding(cd.getFullYear(), 4) + '-' + zeroPadding(cd.getMonth() + 1, 2) + '-' + zeroPadding(cd.getDate(), 2) + ' ' + week[cd.getDay()];
+
+            if (cd.getSeconds() % 2 === 0) {
+                if (!clock.lastEvenSecond || clock.lastEvenSecond !== cd.getSeconds()) {
+                    cycleText();
+                    clock.lastEvenSecond = cd.getSeconds();
+                }
+            } else {
+                clock.lastEvenSecond = null;
+            }
         }
 
         function zeroPadding(num, digit) {
@@ -102,12 +112,6 @@
             clock.cyclingText = textArray[textIndex];
             textIndex = (textIndex + 1) % textArray.length;
         }
-
-        // Start cycling after a 1-second delay to sync with even seconds
-        setTimeout(function () {
-            cycleText(); // Initial call
-            setInterval(cycleText, 2000); // Change text every 2 seconds
-        }, 1000);
     </script>
 </body>
 </html>
