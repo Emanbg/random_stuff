@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Clock with Vue.js</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+        }
+
+        #clock {
+            font-family: "JetBrains Mono", monospace;
+            color: #ffffff;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0;
+        }
+
+            #clock .time {
+                letter-spacing: 0.05em;
+                font-size: clamp(80px, 16vw, 200px);
+                padding: 5px 0;
+                margin: 0;
+            }
+
+            #clock .date {
+                letter-spacing: 0.1em;
+                font-size: clamp(30px, 5vw, 60px);
+                margin: 0 0 10px 0;
+            }
+
+            #clock .cycling-text {
+                font-size: clamp(150px, 8vw, 100px);
+                margin-top: 10px;
+            }
+    </style>
+</head>
+<body>
+    <div id="clock">
+        <p class="date">{{ date }}</p>
+        <p class="time">{{ time }}</p>
+        <p class="cycling-text">{{ cyclingText }}</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script>
+        var clock = new Vue({
+            el: '#clock',
+            data: {
+                time: '',
+                date: '',
+                cyclingText: ''
+            }
+        });
+
+        var week = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+        var timerID = setInterval(updateTime, 1000);
+        updateTime();
+
+        function updateTime() {
+            var cd = new Date();
+            clock.time = zeroPadding(cd.getHours(), 2) + ':' + zeroPadding(cd.getMinutes(), 2) + ':' + zeroPadding(cd.getSeconds(), 2);
+            clock.date = zeroPadding(cd.getFullYear(), 4) + '-' + zeroPadding(cd.getMonth() + 1, 2) + '-' + zeroPadding(cd.getDate(), 2) + ' ' + week[cd.getDay()];
+        }
+
+        function zeroPadding(num, digit) {
+            var zero = '';
+            for (var i = 0; i < digit; i++) {
+                zero += '0';
+            }
+            return (zero + num).slice(-digit);
+        }
+
+        var textArray = [
+            ">w<",
+            "owo",
+            "uwu",
+            "qwq",
+            ".w.",
+            "xwx",
+            "-w-",
+            ";w;"
+        ];
+        var textIndex = 0;
+
+        function cycleText() {
+            clock.cyclingText = textArray[textIndex];
+            textIndex = (textIndex + 1) % textArray.length;
+        }
+
+        // Start cycling after a 1-second delay to sync with even seconds
+        setTimeout(function () {
+            cycleText(); // Initial call
+            setInterval(cycleText, 2000); // Change text every 2 seconds
+        }, 1000);
+    </script>
+</body>
+</html>
