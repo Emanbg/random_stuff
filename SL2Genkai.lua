@@ -12,8 +12,6 @@ local filePath = folderName .. "/" .. fileName
 
 getgenv().AutoRollEnabled = false
 local currentWebhook = ""
-local webhookName = "SL2 Genkai Roll"
-local webhookAvatar = "https://files.thatguyalpha.net/screenshots/SL2GenkaiIcon.png"
 
 if not isfolder(folderName) then
     makefolder(folderName)
@@ -160,41 +158,29 @@ local function sendGenkaiUpdate()
     local success, err = pcall(function()
         local stats = game.Players.LocalPlayer.statz.main
         
-        local nameList = {}
         local rawNames = {}
         local rawSpins = game.Players.LocalPlayer.PlayerGui.Main.Customization.numberofspins.Text
         local spins = rawSpins:gsub("[%[%]]", "") .. " left"
 
         for i = 1, 4 do
             local name = stats["kg" .. i].Value
-            
             if name ~= "" and name ~= "Empty" and name ~= nil then
-                table.insert(nameList, i .. " - " .. name)
                 table.insert(rawNames, name)
             end
         end
 
         if #rawNames > 0 then
-            -- Create URL with comma separated names
-            -- Format: api.thatguyalpha.net/SL2Genkai?Name1,Name2,Name3,Name4
-            local urlString = table.concat(rawNames, ",")
-            local finalRequestUrl = apiUrl .. "?" .. urlString
-
             request({
-                Url = currentWebhook,
+                Url = apiUrl .. "/webhook",
                 Method = "POST",
                 Headers = { ["Content-Type"] = "application/json" },
                 Body = HttpService:JSONEncode({
-                    ["username"] = webhookName,
-                    ["avatar_url"] = webhookAvatar,
-                    ["content"] = "**Current Genkais:**\n" .. table.concat(nameList, "\n") .. "\n**" .. spins .. "**",
-                    ["embeds"] = {{
-                        ["image"] = { ["url"] = finalRequestUrl },
-                        ["color"] = 0x2b2d31
-                    }}
+                    ["webhook_url"] = currentWebhook,
+                    ["genkai_names"] = rawNames,
+                    ["spins_text"] = spins
                 })
             })
-            print("Genkai layout sent to backend successfully.")
+            print("Genkai update sent to backend.")
         else
             warn("No Genkais detected.")
         end
