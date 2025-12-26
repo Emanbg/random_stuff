@@ -12,6 +12,8 @@ local filePath = folderName .. "/" .. fileName
 
 getgenv().AutoRollEnabled = false
 local currentWebhook = ""
+local webhookName = "SL2 Genkai Roll"
+local webhookAvatar = "https://files.thatguyalpha.net/screenshots/SL2GenkaiIcon.png"
 
 if not isfolder(folderName) then
     makefolder(folderName)
@@ -182,6 +184,8 @@ local function sendGenkaiUpdate()
                 Method = "POST",
                 Headers = { ["Content-Type"] = "application/json" },
                 Body = HttpService:JSONEncode({
+                    ["username"] = webhookName,
+                    ["avatar_url"] = webhookAvatar,
                     ["content"] = "**Current Genkais:**\n" .. table.concat(nameList, "\n") .. "\n" .. spins,
                     ["embeds"] = {{
                         ["image"] = { ["url"] = finalRequestUrl },
