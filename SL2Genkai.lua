@@ -5,20 +5,40 @@ local TweenService = game:GetService("TweenService")
 
 local request = (syn and syn.request) or (http and http.request) or http_request or request
 
+-- CONFIGURATION
 local apiUrl = "https://api.thatguyalpha.net/SL2Genkai"
 local folderName = "SL2Genkai"
-local fileName = "webhook.txt"
+local fileName = "settings.txt" -- Using JSON content inside txt as requested
 local filePath = folderName .. "/" .. fileName
 
+-- State
 getgenv().AutoRollEnabled = false
-local currentWebhook = ""
+local currentSettings = {
+    webhook_url = "",
+    halve_res = false
+}
 
+-- File System Setup
 if not isfolder(folderName) then
     makefolder(folderName)
 end
 
+-- Load Settings
 if isfile(filePath) then
-    currentWebhook = readfile(filePath)
+    local success, decoded = pcall(function()
+        return HttpService:JSONDecode(readfile(filePath))
+    end)
+    if success and decoded then
+        currentSettings = decoded
+        -- Backwards compatibility if it was just a string before (though we changed filename)
+        if type(currentSettings) == "string" then
+             currentSettings = { webhook_url = currentSettings, halve_res = false }
+        end
+    end
+elseif isfile(folderName .. "/webhook.txt") then
+    -- Migration from old file
+    local oldUrl = readfile(folderName .. "/webhook.txt")
+    currentSettings.webhook_url = oldUrl
 end
 
 -- GUI Creation
@@ -27,6 +47,7 @@ local MainFrame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local WebhookInput = Instance.new("TextBox")
 local ToggleButton = Instance.new("TextButton")
+local HalfResButton = Instance.new("TextButton")
 local CloseButton = Instance.new("TextButton")
 local StatusLabel = Instance.new("TextLabel")
 local UICorner = Instance.new("UICorner")
@@ -41,10 +62,10 @@ MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 MainFrame.Position = UDim2.new(0.5, -150, 0.5, -110) 
-MainFrame.Size = UDim2.new(0, 300, 0, 220) 
+MainFrame.Size = UDim2.new(0, 300, 0, 260) -- Increased height for extra button
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.ClipsDescendants = true -- Prevent overflow
+MainFrame.ClipsDescendants = true 
 
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
@@ -64,11 +85,11 @@ Title.TextSize = 18.000
 WebhookInput.Name = "WebhookInput"
 WebhookInput.Parent = MainFrame
 WebhookInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-WebhookInput.Position = UDim2.new(0.1, 0, 0.25, 0)
+WebhookInput.Position = UDim2.new(0.1, 0, 0.2, 0)
 WebhookInput.Size = UDim2.new(0.8, 0, 0, 35)
 WebhookInput.Font = Enum.Font.Gotham
 WebhookInput.PlaceholderText = "Enter Webhook URL"
-WebhookInput.Text = currentWebhook
+WebhookInput.Text = currentSettings.webhook_url
 WebhookInput.TextColor3 = Color3.fromRGB(200, 200, 200)
 WebhookInput.TextSize = 14.000
 WebhookInput.ClearTextOnFocus = false
@@ -79,16 +100,30 @@ local inputCorner = Instance.new("UICorner")
 inputCorner.CornerRadius = UDim.new(0, 6)
 inputCorner.Parent = WebhookInput
 
--- Padding for text box
 local UIPadding = Instance.new("UIPadding")
 UIPadding.Parent = WebhookInput
 UIPadding.PaddingLeft = UDim.new(0, 10)
 UIPadding.PaddingRight = UDim.new(0, 10)
 
+-- Half Res Toggle Button
+HalfResButton.Name = "HalfResButton"
+HalfResButton.Parent = MainFrame
+HalfResButton.BackgroundColor3 = currentSettings.halve_res and Color3.fromRGB(60, 200, 60) or Color3.fromRGB(80, 80, 80)
+HalfResButton.Position = UDim2.new(0.1, 0, 0.4, 0)
+HalfResButton.Size = UDim2.new(0.8, 0, 0, 30)
+HalfResButton.Font = Enum.Font.GothamBold
+HalfResButton.Text = "Small Image: " .. (currentSettings.halve_res and "ON" or "OFF")
+HalfResButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+HalfResButton.TextSize = 14.000
+
+local hrCorner = Instance.new("UICorner")
+hrCorner.CornerRadius = UDim.new(0, 6)
+hrCorner.Parent = HalfResButton
+
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Parent = MainFrame
 ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 200, 60)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+ToggleButton.Position = UDim2.new(0.1, 0, 0.6, 0)
 ToggleButton.Size = UDim2.new(0.35, 0, 0, 40)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.Text = "START"
@@ -102,7 +137,7 @@ btnCorner.Parent = ToggleButton
 CloseButton.Name = "CloseButton"
 CloseButton.Parent = MainFrame
 CloseButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-CloseButton.Position = UDim2.new(0.55, 0, 0.5, 0)
+CloseButton.Position = UDim2.new(0.55, 0, 0.6, 0)
 CloseButton.Size = UDim2.new(0.35, 0, 0, 40)
 CloseButton.Font = Enum.Font.GothamBold
 CloseButton.Text = "CLOSE"
@@ -117,7 +152,7 @@ StatusLabel.Name = "StatusLabel"
 StatusLabel.Parent = MainFrame
 StatusLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 StatusLabel.BackgroundTransparency = 1.000
-StatusLabel.Position = UDim2.new(0, 0, 0.8, 0)
+StatusLabel.Position = UDim2.new(0, 0, 0.85, 0)
 StatusLabel.Size = UDim2.new(1, 0, 0, 20)
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.Text = "Status: Idle"
@@ -125,12 +160,22 @@ StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 StatusLabel.TextSize = 12.000
 
 -- ## FUNCTIONS ## --
-local function saveWebhook()
-    local url = WebhookInput.Text
-    if url and url ~= "" then
-        writefile(filePath, url)
-        currentWebhook = url
-        print("Webhook saved to " .. filePath)
+local function saveSettings()
+    currentSettings.webhook_url = WebhookInput.Text
+    -- halve_res is updated by button click
+    
+    local json = HttpService:JSONEncode(currentSettings)
+    writefile(filePath, json)
+    print("Settings saved to " .. filePath)
+end
+
+local function updateHalfResButton()
+    if currentSettings.halve_res then
+        HalfResButton.Text = "Small Image: ON"
+        HalfResButton.BackgroundColor3 = Color3.fromRGB(60, 200, 60) -- Green
+    else
+        HalfResButton.Text = "Small Image: OFF"
+        HalfResButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80) -- Grey
     end
 end
 
@@ -153,7 +198,7 @@ local function cleanup()
 end
 
 local function sendGenkaiUpdate()
-    if currentWebhook == "" then return end
+    if currentSettings.webhook_url == "" then return end
     
     local success, err = pcall(function()
         local stats = game.Players.LocalPlayer.statz.main
@@ -175,9 +220,10 @@ local function sendGenkaiUpdate()
                 Method = "POST",
                 Headers = { ["Content-Type"] = "application/json" },
                 Body = HttpService:JSONEncode({
-                    ["webhook_url"] = currentWebhook,
+                    ["webhook_url"] = currentSettings.webhook_url,
                     ["genkai_names"] = rawNames,
-                    ["spins_text"] = spins
+                    ["spins_text"] = spins,
+                    ["halve_res"] = currentSettings.halve_res
                 })
             })
             print("Genkai update sent to backend.")
@@ -204,18 +250,24 @@ local function rollGenkai()
 end
 
 WebhookInput.FocusLost:Connect(function(enterPressed)
-    saveWebhook()
+    saveSettings()
+end)
+
+HalfResButton.MouseButton1Click:Connect(function()
+    currentSettings.halve_res = not currentSettings.halve_res
+    updateHalfResButton()
+    saveSettings()
 end)
 
 ToggleButton.MouseButton1Click:Connect(function()
     getgenv().AutoRollEnabled = not getgenv().AutoRollEnabled
     updateButtonState()
-    saveWebhook()
+    saveSettings()
     
     if getgenv().AutoRollEnabled then
         task.spawn(function()
             while getgenv().AutoRollEnabled do
-                if currentWebhook == "" then
+                if currentSettings.webhook_url == "" then
                     warn("Please enter a webhook URL first!")
                     getgenv().AutoRollEnabled = false
                     updateButtonState()
@@ -236,3 +288,4 @@ CloseButton.MouseButton1Click:Connect(function()
 end)
 
 updateButtonState()
+updateHalfResButton()
