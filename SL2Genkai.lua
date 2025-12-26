@@ -162,7 +162,8 @@ local function sendGenkaiUpdate()
         
         local nameList = {}
         local rawNames = {}
-        local spins = game.Players.LocalPlayer.PlayerGui.Main.Customization.numberofspins.Text
+        local rawSpins = game.Players.LocalPlayer.PlayerGui.Main.Customization.numberofspins.Text
+        local spins = rawSpins:gsub("[%[%]]", "") .. " left"
 
         for i = 1, 4 do
             local name = stats["kg" .. i].Value
@@ -186,7 +187,7 @@ local function sendGenkaiUpdate()
                 Body = HttpService:JSONEncode({
                     ["username"] = webhookName,
                     ["avatar_url"] = webhookAvatar,
-                    ["content"] = "**Current Genkais:**\n" .. table.concat(nameList, "\n") .. "\n" .. spins,
+                    ["content"] = "**Current Genkais:**\n" .. table.concat(nameList, "\n") .. "\n**" .. spins .. "**",
                     ["embeds"] = {{
                         ["image"] = { ["url"] = finalRequestUrl },
                         ["color"] = 0x2b2d31
